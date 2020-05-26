@@ -1,11 +1,8 @@
 import socket
 import threading
+from chat import Chat
 
 PORT = 7447
-
-MESSAGE_LENGTH_SIZE = 64
-
-ENCODING = 'utf-8'
 
 def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,34 +12,25 @@ def main():
     s.bind(HOST_INFORMATION)
 
     print("[SERVER STARTS] server is starting...")
-    start(s)
+    s.listen()
+    client_handler(s)
 
-def start(server):
-    server.listen()
+def client_handler(server):
+    chat = Chat()
 
-    while True:
-        conn, address = server.accept()
-
-        t = threading.Thread(target=client_handler, args=(conn, address))
-
-        t.start()
-
-def client_handler(conn, address):
+    conn, address = server.accept()
     print('[NEW CONNECTION] connected from {}'.format(address))
 
-    connected = True
-    while connected:
-        message_length = int(conn.recv(MESSAGE_LENGTH_SIZE).decode(ENCODING))
-        
-        msg = conn.recv(message_length).decode(ENCODING)
+    sender = threading.Thread(target=chat.send_handler, args=(conn, ))
+    sender.start()
 
-        print('[MESSAGE RECIEVED] {}'.format(msg))
+    receiver = threading.Thread(target=chat.recv_msg, args=(conn, ))
+    receiver.start()
 
-        if msg == 'DISCONNECT':
-            connected = False
-    
+    sender.join()
+    receiver.join()
+    print('[CLOSE CONNECTION] {}'.format(address))
     conn.close()
-
 
 if __name__ == '__main__':
     main()

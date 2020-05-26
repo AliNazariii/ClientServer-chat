@@ -1,10 +1,8 @@
 import socket
+import threading
+from chat import Chat
 
 PORT = 7447
-
-MESSAGE_LENGTH_SIZE = 64
-
-ENCODING = 'utf-8'
 
 def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -12,21 +10,23 @@ def main():
     address = socket.gethostbyname(socket.gethostname())
     SERVER_INFORMATION = (address, PORT)
     s.connect(SERVER_INFORMATION)
+    print('[START CONNECTION]')
 
-    while True:
-        input_string = input()
-        send_msg(s, input_string)
-        if input_string == 'DISCONNECT': break
+    client_handler(s)
 
-def send_msg(client, msg):
-    message = msg.encode(ENCODING)
+def client_handler(client):
+    chat = Chat()
 
-    msg_length = len(message)
-    msg_length = str(msg_length).encode(ENCODING)
-    msg_length += b' ' * (MESSAGE_LENGTH_SIZE - len(msg_length))
+    sender = threading.Thread(target=chat.send_handler, args=(client, ))
+    sender.start()
 
-    client.send(msg_length)
-    client.send(message)
+    receiver = threading.Thread(target=chat.recv_msg, args=(client, ))
+    receiver.start()
+
+    sender.join()
+    receiver.join()
+    print('[CLOSE CONNECTION]')
+    client.close()
 
 if __name__ == '__main__':
     main()
