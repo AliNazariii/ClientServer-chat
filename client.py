@@ -7,15 +7,16 @@ MESSAGE_LENGTH_SIZE = 64
 ENCODING = 'utf-8'
 
 def main():
-    address = socket.gethostbyname(socket.gethostname())
-
-    SERVER_INFORMATION = (address, PORT)
-
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    address = socket.gethostbyname(socket.gethostname())
+    SERVER_INFORMATION = (address, PORT)
     s.connect(SERVER_INFORMATION)
-    send_msg(s, 'Hello World!')
-    send_msg(s, 'DISCONNECT')
+
+    while True:
+        input_string = input()
+        send_msg(s, input_string)
+        if input_string == 'DISCONNECT': break
 
 def send_msg(client, msg):
     message = msg.encode(ENCODING)
